@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+		<style>
+			@import url(https://fonts.googleapis.com/css?family=Cabin);
+			html,body{
+				font-family: 'Cabin', sans-serif;
+				padding:0px;
+				margin:0px;
+			}
+			header{
+				padding:12px;
+				margin-bottom:16px;
+				background-color: #ccc;
+				border-bottom:1px solid #999;
+				position:fixed;
+				z-index:10;
+				width:100%;
+			}
+			header h1 {
+				padding:0px;
+				margin:0px;
+				line-height:1.1em;
+			}
+			#images{
+				margin:0px 12px;
+				padding-top:190px;
+			}
+			figure{
+				margin:12px;
+				padding:12px;
+				border:1px solid #ccc;
+				float:left;
+				display:inline-block;
+				cursor: pointer;
+				min-width:560px;
+				min-height:396px;
+				background-image: url('http://images.jamesprenderga.st/ajax-loader.gif');
+				background-position: center center;
+				background-repeat: no-repeat;
+			}
+			figure a.rotateLink{
+				float:right; margin: 6px; border:1px solid #ccc; padding:6px;
+			}
+			figure a.rotateLink:hover{
+				color:#fff;
+				background-color: #999;
+			}
+			figure img{
+				-webkit-transition: 0.4s;
+  				-moz-transition: 0.4s;
+  				-ms-transition: 0.4s;
+  				-o-transition: 0.4s;
+  				transition: 0.4s;
+			}
+		</style>
+		<script>
+			jpImageLib = function(){
+				var pageSize = 20;
+				var index = window.location.hash ? +window.location.hash.replace('#','') : 1;
+				var cacheBuster = function(){
+					return Date.now();
+				}
+
+				var updateNav = function(index, pageSize){
+					var prev = index-pageSize;
+					var next = index+pageSize;
+					var urlBase = window.location.protocol + '//' + window.location.hostname + window.location.pathname;
+					
+					document.getElementById('prev').href = urlBase + '?c=' + cacheBuster() + '#' + prev;
+					document.getElementById('next').href = urlBase + '?c=' + cacheBuster() + '#' + next;
+					document.forms["navform"]["navfrom"].value = index;
+					document.forms["navform"]["navto"].value = index+pageSize;
+				};
+
+				var copyTextToClipboard = function(text) {
+				  var textArea = document.createElement("textarea");
+				  textArea.style.position = 'fixed';
+				  textArea.style.top = 0;
+				  textArea.style.left = 0;
+
+				  // Ensure it has a small width and height. Setting to 1px / 1em
+				  // doesn't work as this gives a negative w/h on some browsers.
+				  textArea.style.width = '2em';
+				  textArea.style.height = '2em';
+
+				  // We don't need padding, reducing the size if it does flash render.
+				  textArea.style.padding = 0;
+
+				  // Clean up any borders.
+				  textArea.style.border = 'none';
+				  textArea.style.outline = 'none';
+				  textArea.style.boxShadow = 'none';
+
+				  // Avoid flash of white box if rendered for any reason.
+				  textArea.style.background = 'transparent';
+
+				  textArea.value = text;
+
+				  document.body.appendChild(textArea);
+
+				  textArea.select();
+
+				  try {
+				    var successful = document.execCommand('copy');
+				    var msg = successful ? 'successful' : 'unsuccessful';
+				    console.log('Copying text command was ' + msg);
+				  } catch (err) {
+				    console.log('Oops, unable to copy');
+				  }
+
+				  document.body.removeChild(textArea);
+				}
+
+				var makeRotateArrow = function(direction, imageNode){
+					var arrow = document.createElement('i');
+					var link = document.createElement('a');
+					link.className = "rotateLink";
+					rotationAngles = ["rotate(0deg)","rotate(90deg)","rotate(180deg)","rotate(-90deg)"];
+					function getRotationIndex(node){
+						for(var i=0;i<rotationAngles.length;i++){
+							if(rotationAngles[i]===node.style.transform){
+								return i;
+							}
+						}
+						return 0;
+					}
+					switch(direction){
+						case 'right':
+							arrow.className = "fa fa-rotate-right";
+							link.onclick = function(){
+								var rotationIndex = (getRotationIndex(imageNode) + 1)%4;
+								imageNode.style.transform = rotationAngles[rotationIndex];
+								storeTransform(imageNode.src,imageNode.style.transform);
+							};
+						break;
+						default:
+							arrow.className = "fa fa-rotate-left";
+							link.onclick = function(){
+								var rotationIndex = getRotationIndex(imageNode)-1;
+								if(rotationIndex<0){
+									rotationIndex = 3;
+								}
+								imageNode.style.transform = rotationAngles[rotationIndex];
+								if(imageNode.style.transform!=rotationAngles[0]){ //don't bother storing transform: rotate(0deg)
+									storeTransform(imageNode.src,imageNode.style.transform);
+								}
+							};
+					}
+					arrow.appendChild(document.createTextNode(' '));
+					link.appendChild(arrow);
+					return link;
+				};
+
+				var load = function(index){
+					
+					var d = document.getElementById('images');
+					
+					updateNav(index,pageSize);
+					for (var i=index;i<index+pageSize;i++){
+						var fig = document.createElement('figure');
+						var j = document.createElement('img');
+						var cap = document.createElement('figcaption');
+
+						var photoString = 'http://images.jamesprenderga.st/resized-fourxthree/DSC' + ("0000" +  i).substr(-5) + '.JPG';
+						var capString = document.createTextNode(photoString);
+						cap.appendChild(capString);
+						j.src = photoString;
+						j.onclick = function(){
+							copyTextToClipboard(photoString);
+						};
+						j.onerror = function(){
+							this.parentNode.style.display = 'none';
+						};
+						fig.appendChild(j);
+						fig.appendChild(cap);
+						var rightArrow = makeRotateArrow('right',j);
+						var leftArrow = makeRotateArrow('left',j);
+						fig.appendChild(rightArrow);
+						fig.appendChild(leftArrow);
+						d.appendChild(fig);
+					}
+				};
+
+				this.transforms = [];
+				var storeTransform = function(node,transform){
+						this.transforms[node] = transform;
+				};
+
+				var getTransforms = function(){
+					console.log(this.transforms);
+				};
+
+				return{
+					loadFirstPage : function(){
+						load(index);
+					},
+					loadNextPage : function(){
+						index = index + pageSize;
+						load(index);
+					},
+					getTransforms : getTransforms.bind(this)
+				}
+			}();
+			
+
+			window.onload = function(e){
+				jpImageLib.loadFirstPage();
+			};
+
+			window.onscroll = function(){
+				if(document.body.scrollTop + window.innerHeight + 4 >= document.body.scrollHeight){
+					jpImageLib.loadNextPage();
+					console.log('infiniScroll');
+				}
+			}
+		</script>	
+	</head>
+	<body>
+		<header>
+			<h1>Resized Images</h1>	
+			<p>click on an image to copy the url to your clipboard</p>
+			<p>If the page becomes sluggish or your browser eats all your RAM, click the reload icon(<i class="fa fa-repeat"></i>) to reload the page afresh at the current index</p>
+			<form id="navform">
+				<nav>
+					<a href="" id="prev" href="#" style="text-decoration:none;color:#000"><i class="fa fa-arrow-left"></i></a> 
+					: <input type="text" size="4" name="navfrom"/> to <input type="text" size="4" name="navto" disabled="disabled" /> : 
+					<a href="" id="next" href="#" style="text-decoration:none;color:#000"><i class="fa fa-arrow-right"></i>&nbsp;<i class="fa fa-repeat"></i></a>
+				</nav>
+			</form>
+		</header>
+		
+		<section id="images"></section>
+	</body>
+</html>
